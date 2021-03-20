@@ -36,7 +36,10 @@ BG_2048=(237,194,46)
 BG_HIGH=(60,58,50)
 #define static renders
 bg=pygame.image.load(r'./bg.png')
+#game state class
 class Game(object):
+    isGameOver=False
+    moved=False
     board=[0 for i in range(16)]
     def __init__(self):
         self.board=[0 for i in range(16)]
@@ -63,6 +66,27 @@ class Game(object):
             #partly game over (game is over when there are no more possible moves) 
             print("GameOver!")
         self.prnt()
+    
+    #board getter setter
+    def get_board(self):
+        return self.board
+    def set_board(self,b):
+        if b == self.board:
+            moved=False
+        else:
+            this.board = b 
+            this.moved=True
+    #gameover setter getter
+    def setGame(self, xyz):
+        self.isGameOver=xyz
+    def getGame(self):
+        return self.isGameOver
+    #moved setter getter
+    def setMoved(self, xyz):
+        self.moved=xyz
+    def getMoved(self):
+        return self.moved
+#main class
 class main(object):
     def __init__(self,width,hieght):
         self.width=width
