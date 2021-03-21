@@ -38,6 +38,10 @@ BG_HIGH=(60,58,50)
 bg=pygame.image.load(r'./bg.png')
 #game state class
 class Game(object):
+    #high score
+    with open('highScore.txt', 'r') as f:
+        f.seek(0)
+        highScore=(int(float(f.read())))
     score=0
     isGameOver=False
     moved=False
@@ -46,6 +50,7 @@ class Game(object):
         self.board=[0 for i in range(16)]
         self.addTile()
         self.addTile()
+        self.score=0
     def prnt(self):
         for x in range(0,4):
                 print(self.board[4*x],self.board[4*x+1],self.board[4*x+2],self.board[4*x+3])
@@ -219,7 +224,11 @@ class Game(object):
         else:
             #else do something i guess
             print("else")
-
+        #update score
+        if self.score > self.highScore:
+            self.highScore=self.score
+            with open('highScore.txt', 'w') as f:
+                f.write(str(self.highScore))
         #once the loop completes, outside all the if/elif/else statements:
         # do g.setBoard with B, which is the overall board list
         self.set_board(B)
@@ -243,6 +252,9 @@ class Game(object):
     #score getter and maybe setter if needed
     def getScore(self):
         return self.score
+    #get highscore
+    def getHighScore(self):
+        return self.highScore
 #main class
 class main(object):
     def __init__(self,width,hieght):
@@ -364,8 +376,10 @@ class main(object):
             screen.blit(label, (360, 50))
             #render score
             score = inGameFont.render(("Score: "+str(g.getScore())),1,FONT_24)
-            screen.blit(score,(350,550))
-
+            screen.blit(score,(200,550))
+            #highscore
+            highscoredisplay = inGameFont.render(("High Score: "+str(g.getHighScore())),1,FONT_24)
+            screen.blit(highscoredisplay,(200,575))
             
             # keyboard handling
             for event in pygame.event.get():
@@ -395,6 +409,7 @@ class main(object):
                 #     if event.key == ord('a'):
                 #     if event.key == ord(' '):
                 if event.type == pygame.QUIT:
+                    f.close()
                     pygame.quit() 
                     exit(0)
                 #update
