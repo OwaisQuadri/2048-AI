@@ -38,6 +38,7 @@ BG_HIGH=(60,58,50)
 bg=pygame.image.load(r'./bg.png')
 #game state class
 class Game(object):
+    score=0
     isGameOver=False
     moved=False
     board=[0 for i in range(16)]
@@ -87,6 +88,8 @@ class Game(object):
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
                                 L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                #add points
+                                self.score+=self.board[index]
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -121,6 +124,8 @@ class Game(object):
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
                                 L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                #add points
+                                self.score+=self.board[index]
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -155,6 +160,8 @@ class Game(object):
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
                                 L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                #add points
+                                self.score+=self.board[index]
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -190,6 +197,8 @@ class Game(object):
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
                                 L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                #add points
+                                self.score+=self.board[index]
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -231,6 +240,9 @@ class Game(object):
         self.moved=xyz
     def getMoved(self):
         return self.moved
+    #score getter and maybe setter if needed
+    def getScore(self):
+        return self.score
 #main class
 class main(object):
     def __init__(self,width,hieght):
@@ -337,6 +349,7 @@ class main(object):
             #null background
             pygame.draw.rect(screen,BG_NULL,[200,150,400,400])
             #visual update
+
             #drawTile(x,y,value)
             for x in range(0,4):
                 for y in range(0,4):
@@ -346,9 +359,12 @@ class main(object):
             screen.blit(bg,grid_position)#always on top
             #title label
             pygame.draw.rect(screen,BG_2048,[355,25,100,100])
-            # render text
+            # render title
             label = TitleFont.render("2048", 1, FONT_8PLUS)
             screen.blit(label, (360, 50))
+            #render score
+            score = inGameFont.render(("Score: "+str(g.getScore())),1,FONT_24)
+            screen.blit(score,(350,550))
 
             
             # keyboard handling
