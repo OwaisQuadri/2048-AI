@@ -51,6 +51,7 @@ class Game(object):
         self.addTile()
         self.addTile()
         self.score=0
+        self.isGameOver=False
     def prnt(self):
         for x in range(0,4):
                 print(self.board[4*x],self.board[4*x+1],self.board[4*x+2],self.board[4*x+3])
@@ -76,15 +77,21 @@ class Game(object):
         #create empty list L and B
         L=[]
         B=self.board
+        #initial array
+        b4=[]
         if dir=="up":
             #then
             # 0 < 4 < 8 < 12
             # loop through list by columns
             # we want order 0,4,8,12,  1,5,9,13,  2,6,10,14,  3,7,11,15
+            
             for i_col in range(4):
                 for i_row in range (4):
                     #loop varaible index
                     index=i_col+(i_row*4)
+                    #add to b4 list
+                    iindex=i_row+4*i_col
+                    b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
                     if self.board[index] != 0:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
@@ -121,6 +128,9 @@ class Game(object):
                 for i_row in range (4):
                     #loop varaible index
                     index=i_col+(12-i_row*4)
+                    #add to b4 list
+                    iindex=i_row+4*i_col
+                    b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
                     if self.board[index] != 0:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
@@ -157,6 +167,9 @@ class Game(object):
                 for i_col in range (4):
                     #loop varaible index
                     index=(3-i_col)+(i_row*4)
+                    #add to b4 list
+                    iindex=4*i_row+i_col
+                    b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
                     if self.board[index] != 0:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
@@ -194,6 +207,9 @@ class Game(object):
                 for i_col in range (4):
                     #loop varaible index
                     index=i_col+(i_row*4)
+                    #add to b4 list
+                    iindex=4*i_row+i_col
+                    b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
                     if self.board[index] != 0:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
@@ -231,18 +247,30 @@ class Game(object):
                 f.write(str(self.highScore))
         #once the loop completes, outside all the if/elif/else statements:
         # do g.setBoard with B, which is the overall board list
-        self.set_board(B)
+        self.set_board(B,b4)
     
     #board getter setter
     def get_board(self):
         return self.board
-    def set_board(self,b):
-            self.board = b 
-            self.moved=True
+    def set_board(self,b,b4):
+            if b == b4:
+                self.moved=False
+            else:
+                self.board = b 
+                self.moved=True
     #gameover setter getter
     def setGameOver(self, xyz):
         self.isGameOver=xyz
     def getGameOver(self):
+        #function to check if game is over
+        #if game is over cover game with translucent screen that says "press 'SPC' to try again"
+        #if there are no more empty slots and none of the same numbers next to one another, game is over
+        #first loop through entire array once and check for no zeros
+            #if any zeros, return with no action
+        #else loop through rows to check for adgacent same numbers
+            #if any, return with no action
+        #else loop through cols to check for adgacent same numbers
+            #if any, return with no action    
         return self.isGameOver
     #moved setter getter
     def setMoved(self, xyz):
@@ -388,18 +416,26 @@ class main(object):
                         g.swipe("up")
                         if (g.getMoved()):
                             g.addTile()
+                        else:
+                            g.getGameOver()
                     if event.key == ord('s'):
                         g.swipe("down")
                         if (g.getMoved()):
                             g.addTile()
+                        else:
+                            g.getGameOver()
                     if event.key == ord('d'):
                         g.swipe("right")
                         if (g.getMoved()):
                             g.addTile()
+                        else:
+                            g.getGameOver()
                     if event.key == ord('a'):
                         g.swipe("left")
                         if (g.getMoved()):
                             g.addTile()
+                        else:
+                            g.getGameOver()
                     if event.key == ord(' '):
                         g.restart()
                 # if event.type == pygame.KEYUP:
@@ -409,7 +445,6 @@ class main(object):
                 #     if event.key == ord('a'):
                 #     if event.key == ord(' '):
                 if event.type == pygame.QUIT:
-                    f.close()
                     pygame.quit() 
                     exit(0)
                 #update
