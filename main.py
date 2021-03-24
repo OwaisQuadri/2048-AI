@@ -69,8 +69,7 @@ class Game(object):
             
             self.board[index]=random.choice([2,4])
         else:
-            #partly game over (game is over when there are no more possible moves) 
-            print("GameOver!")
+            pass
     #movement
     def swipe(self,dir):
         self.moved=False
@@ -239,8 +238,7 @@ class Game(object):
                         B[i_row*4+out]=0
                     out+=1
         else:
-            #else do something i guess
-            print("else")
+            pass
         #update score
         if self.score > self.highScore:
             self.highScore=self.score
@@ -265,11 +263,30 @@ class Game(object):
         #if game is over cover game with translucent screen that says "press 'SPC' to try again"
         #if there are no more empty slots and none of the same numbers next to one another, game is over
         #first loop through entire array once and check for no zeros
-            #if any zeros, return with no action
-        #else loop through rows to check for adgacent same numbers
-            #if any, return with no action
-        #else loop through cols to check for adgacent same numbers
-            #if any, return with no action    
+        for b in self.board:
+            if b != 0 :
+                pass
+            else:
+                #if any zeros, return with isgameover=false
+                self.isGameOver=False
+                return self.isGameOver
+        for j in range (4):#loop through rows to check for adgacent same numbers
+            for i in range(1,4):
+                index = i+4*j
+                
+                if self.board[index] == self.board[index-1]:
+                    #if any, return with no action
+                    self.isGameOver=False
+                    return self.isGameOver
+        for j in range (4):#loop through columns to check for adgacent same numbers
+            for i in range(1,4):
+                index = j+4*i
+                
+                if self.board[index] == self.board[index-4]:
+                    #if any, return with no action
+                    self.isGameOver=False
+                    return self.isGameOver   
+        self.isGameOver=True
         return self.isGameOver
     #moved setter getter
     def setMoved(self, xyz):
@@ -407,7 +424,12 @@ class main(object):
             #highscore
             highscoredisplay = inGameFont.render(("High Score: "+str(g.getHighScore())),1,FONT_24)
             screen.blit(highscoredisplay,(200,575))
-            
+            #render if game over screen
+            if g.getGameOver() :
+                #if game is over cover game with translucent screen that says "press 'SPC' to try again"
+                pygame.draw.rect(screen,FONT_24,[200,150,400,400])
+                endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_8PLUS)
+                screen.blit(endGame,(275,450))
             # keyboard handling
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
