@@ -73,6 +73,7 @@ class Game(object):
             print("GameOver!")
     #movement
     def swipe(self,dir):
+        self.moved=False
         joined=False
         #create empty list L and B
         L=[]
@@ -253,9 +254,7 @@ class Game(object):
     def get_board(self):
         return self.board
     def set_board(self,b,b4):
-            if b == b4:
-                self.moved=False
-            else:
+            if b != b4:
                 self.board = b 
                 self.moved=True
     #gameover setter getter
