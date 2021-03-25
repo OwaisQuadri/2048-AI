@@ -3,6 +3,9 @@ import pygame
 import sys
 import os
 import random
+from pynput.keyboard import Key,Controller
+keyboard=Controller()
+
 #init pygame 
 pygame.init()
 pygame.display.set_caption('2048')
@@ -60,16 +63,18 @@ class Game(object):
     def addTile(self):
         mt=[]
         curr=0
+        #if there are any empty squares
         for sq in self.board:
             if sq == 0:
+                #add to empty square list
                 mt.append(curr)
             curr+=1
+        #if empty array isnt empty there are avail spaces
         if len(mt) != 0:
+            #randomly select square
             index=random.choice(mt)
-            
+            #randomly select value
             self.board[index]=random.choice([2,4])
-        else:
-            pass
     #movement
     def swipe(self,dir):
         self.moved=False
@@ -260,7 +265,7 @@ class Game(object):
         self.isGameOver=xyz
     def getGameOver(self):
         #function to check if game is over
-        #if game is over cover game with translucent screen that says "press 'SPC' to try again"
+        #if game is over cover game with screen that says "press 'SPC' to try again"
         #if there are no more empty slots and none of the same numbers next to one another, game is over
         #first loop through entire array once and check for no zeros
         for b in self.board:
@@ -301,9 +306,10 @@ class Game(object):
         return self.highScore
 #main class
 class main(object):
-    def __init__(self,width,hieght):
+    
+    def __init__(self,width,height):
         self.width=width
-        self.height=hieght
+        self.height=height
         self.Main()
     
 
@@ -311,6 +317,8 @@ class main(object):
         #Put all variables up here
         #initialize game state
         g= Game() 
+        #initialize agent
+        a=Agent(keyboard)
         #render tiles based on spot in grid
         def drawTile(x,y,val):
             size=100
@@ -392,11 +400,11 @@ class main(object):
                 pygame.draw.rect(screen,BG_HIGH,[(fx+(x*size)),(fy+(y*size)),size,size])
                 #draw lettering
                 num= inGameFont.render(str(val), 1, FONT_8PLUS)
-                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))
-            
+                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))  
         #inf loop for game
         while 1:
-            
+            #every tick
+
             # load background
             screen.fill((250,248,239))
             #load 4x4 grid
@@ -430,10 +438,14 @@ class main(object):
                 pygame.draw.rect(screen,FONT_24,[200,150,400,400])
                 endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_8PLUS)
                 screen.blit(endGame,(275,450))
+            #create event
+            newevent = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think())) #create the event
+            pygame.event.post(newevent) #add the event to the queue
             # keyboard handling
+            
             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == ord('w'):
+                if event.type == pygame.KEYDOWN :
+                    if event.key == ord('w') :
                         g.swipe("up")
                         if (g.getMoved()):
                             g.addTile()
@@ -459,17 +471,16 @@ class main(object):
                             g.getGameOver()
                     if event.key == ord(' '):
                         g.restart()
-                # if event.type == pygame.KEYUP:
-                #     if event.key == ord('w'):
-                #     if event.key == ord('s'):
-                #     if event.key == ord('d'):
-                #     if event.key == ord('a'):
-                #     if event.key == ord(' '):
                 if event.type == pygame.QUIT:
                     pygame.quit() 
                     exit(0)
                 #update
                 pygame.display.flip()
+class Agent(object):
+    def __init__(self,keyboard):
+        self.keyboard=keyboard
+    def think(self):
+        return 'w'
 #call main
 if __name__ == '__main__':
     main(width,height)
