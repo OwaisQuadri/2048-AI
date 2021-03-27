@@ -334,19 +334,6 @@ class Game(object):
     #get highscore
     def getHighScore(self):
         return self.highScore
-    #utility score 
-    def getUtility(self):
-        #combination of score, #of empty tiles, highest tile number, and if highest tile is at index 5,6,9 or 10
-        util=0
-        #score is score
-        util+= self.getScore()-offset
-        #empty tiles * highgest tile number
-        util += (self.empty_spaces*max(self.board))
-        middleFour=[5,6,9,10]
-        maxTileIndex=self.board.index(max(self.board))
-        if  maxTileIndex not in middleFour:
-            #if not in middle, unincentivise by reducing utility by 75%
-        util+=offset
 #main class
 class main(object):
     def __init__(self,width,height):
@@ -354,13 +341,11 @@ class main(object):
         self.height=height
         self.Main()
     
-
     def Main(self):
         #Put all variables up here
         #initialize game state
         g= Game() 
         #initialize agent
-        
         a=Agent(keyboard,g)
         #render tiles based on spot in grid
         def drawTile(x,y,value):
@@ -444,7 +429,7 @@ class main(object):
                 pygame.draw.rect(screen,BG_HIGH,[(fx+(x*size)),(fy+(y*size)),size,size])
                 #draw lettering
                 num= inGameFont.render(str(val), 1, FONT_8PLUS)
-                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))  
+                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))
         highest_tile=0
         #inf loop for game
         my_prompts=[]
@@ -561,7 +546,7 @@ class main(object):
             newevent = pygame.event.Event(pygame.KEYDOWN, key=ord(direction)) #create the event
             pygame.event.post(newevent) #add the event to the queue
             # keyboard handling
-            
+                
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN :
                     if event.key == ord('w') :
@@ -911,9 +896,7 @@ class Agent(object):
                     if 'w' in prompt :
                         leaf_node_values.append(0)
                     else:
-                        utility=g[i].getUtility()
-                        
-                        leaf_node_values.append( utility )
+                        leaf_node_values.append( g[i].getScore() )
                 if i>=16 and i<32:
                     if 'd' in prompt :
                         leaf_node_values.append(0)
@@ -929,6 +912,7 @@ class Agent(object):
                         leaf_node_values.append(0)
                     else:
                         leaf_node_values.append(g[i].getScore())
+            
             # print(leaf_node_values[0])
             # print(leaf_node_values[1:5])
             # print(leaf_node_values[5:21])
@@ -937,7 +921,7 @@ class Agent(object):
             # print("s: ",leaf_node_values[53:69])#s
             # print("a: ",leaf_node_values[69:85])#a
             
-            # average wasd leaf nodes and use highest
+            # average wasd leaf nodes and use highest (expectimax)
             wMean.append(mean(leaf_node_values[21:37]))
             dMean.append(mean(leaf_node_values[37:53]))
             sMean.append(mean(leaf_node_values[53:69]))
@@ -955,20 +939,6 @@ class Agent(object):
             return 's'
         else:
             return 'd'
-            # leaf_index=leaf_node_values.index(root_node_value,21)
-            # # print(root_node_value," at ",leaf_index)
-            # if leaf_index >=21 and leaf_index < 37:
-            #     output.append('w')
-            # if leaf_index >=37 and leaf_index < 53:
-            #     output.append('d')
-            # if leaf_index >=53 and leaf_index < 69:
-            #     output.append('s')
-            # if leaf_index >=69 and leaf_index <= 85:
-            #     output.append('a')
-        
-        # out=random.choice(output)
-        # # print("out: ",output)
-        # return out
     
 #call main
 if __name__ == '__main__':
