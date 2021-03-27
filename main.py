@@ -336,7 +336,17 @@ class Game(object):
         return self.highScore
     #utility score 
     def getUtility(self):
-        #combination of score, #of empty tiles,
+        #combination of score, #of empty tiles, highest tile number, and if highest tile is at index 5,6,9 or 10
+        util=0
+        #score is score
+        util+= self.getScore()-offset
+        #empty tiles * highgest tile number
+        util += (self.empty_spaces*max(self.board))
+        middleFour=[5,6,9,10]
+        maxTileIndex=self.board.index(max(self.board))
+        if  maxTileIndex not in middleFour:
+            #if not in middle, unincentivise by reducing utility by 75%
+        util+=offset
 #main class
 class main(object):
     def __init__(self,width,height):
