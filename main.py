@@ -1,11 +1,12 @@
 #imports
+import copy
 import pygame
 import sys
 import os
 import random
+import copy
 from pynput.keyboard import Key,Controller
 keyboard=Controller()
-
 #init pygame 
 pygame.init()
 pygame.display.set_caption('2048')
@@ -18,7 +19,7 @@ inGameFont= pygame.font.Font(r'./csb.ttf', 24)
 width, height = 80*10, 80*8
 screen=pygame.display.set_mode((width, height))
 #global variables
-
+offset=500
 #define colours
 FONT_24=(119,110,101)
 FONT_8PLUS=(249,246,242)
@@ -45,27 +46,51 @@ class Game(object):
     with open('highScore.txt', 'r') as f:
         f.seek(0)
         highScore=(int(float(f.read())))
-    score=0
-    isGameOver=False
+        isGameOver=False
     moved=False
-    board=[0 for i in range(16)]
     def __init__(self):
-        self.board=[0 for i in range(16)]
+        self.board=[offset for i in range(16)]
         self.addTile()
         self.addTile()
-        self.score=0
-        self.isGameOver=False
+        self.__score=offset
+        self.isGameOver=False    
+    def duplicate(self,get):
+        if get:
+            L=[]
+            score=[]
+            with open('currentBoard', 'r') as f:
+                f.seek(0)
+                c=0
+                for line in f:
+                    if c==0:
+                        for word in line.split():
+                            L.append(int(float(word)))
+                    elif c==1:
+                        for word in line.split():
+                            score.append(int(float(word)))
+                    c+=1
+            self.board=L
+            self.setScore(score[0])           
+        else:
+            with open('currentBoard', 'w') as f:
+                boardString=""
+                for b in self.board:
+                    boardString+=str(b)+" "
+                f.write(boardString)
+                f.write("\n")
+                f.write(str(self.getScore()))
     def prnt(self):
-        for x in range(0,4):
-                print(self.board[4*x],self.board[4*x+1],self.board[4*x+2],self.board[4*x+3])
+        for x in range(4):
+            print(str(self.board[4*x]-offset)," ",str(self.board[4*x+1]-offset)," ",str(self.board[4*x+2]-offset)," ",str(self.board[4*x+3]-offset))
     def restart(self):
         self.__init__()
+    
     def addTile(self):
         mt=[]
         curr=0
         #if there are any empty squares
         for sq in self.board:
-            if sq == 0:
+            if sq == offset:
                 #add to empty square list
                 mt.append(curr)
             curr+=1
@@ -74,8 +99,9 @@ class Game(object):
             #randomly select square
             index=random.choice(mt)
             #randomly select value
-            self.board[index]=random.choice([2,4])
+            self.board[index]=offset+random.choice([2,2,2,2,2,2,2,2,2,4])
     #movement
+    
     def swipe(self,dir):
         self.moved=False
         joined=False
@@ -98,15 +124,15 @@ class Game(object):
                     iindex=i_row+4*i_col
                     b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
-                    if self.board[index] != 0:#if not zero
+                    if self.board[index] != offset:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
                             L.append(self.board[index])#joined = false and append to blank list L
                             joined=False
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
-                                L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                L[len(L)-1]+=(self.board[index]-offset)#add current to latest entry in L
                                 #add points
-                                self.score+=self.board[index]
+                                self.__score=self.__score+self.board[index]-offset
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -122,7 +148,7 @@ class Game(object):
                         #put them at the index i_col+out of B and remove from L
                         B[i_col+out]=L.pop(0)
                     else:#put 0 at same index
-                        B[i_col+out]=0
+                        B[i_col+out]=offset
                     out+=4
         elif dir == "down":
             #then
@@ -137,15 +163,15 @@ class Game(object):
                     iindex=i_row+4*i_col
                     b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
-                    if self.board[index] != 0:#if not zero
+                    if self.board[index] != offset:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
                             L.append(self.board[index])#joined = false and append to blank list L
                             joined=False
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
-                                L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                L[len(L)-1]+=(self.board[index]-offset)#add current to latest entry in L
                                 #add points
-                                self.score+=self.board[index]
+                                self.__score=self.__score+self.board[index]-offset
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -161,7 +187,7 @@ class Game(object):
                         #put them at the index i_col+out of B and remove from L
                         B[i_col+out]=L.pop(0)
                     else:#put 0 at same index
-                        B[i_col+out]=0
+                        B[i_col+out]=offset
                     out-=4
         elif dir == "right":
             #then
@@ -176,15 +202,15 @@ class Game(object):
                     iindex=4*i_row+i_col
                     b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
-                    if self.board[index] != 0:#if not zero
+                    if self.board[index] != offset:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
                             L.append(self.board[index])#joined = false and append to blank list L
                             joined=False
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
-                                L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                L[len(L)-1]+=(self.board[index]-offset)#add current to latest entry in L
                                 #add points
-                                self.score+=self.board[index]
+                                self.__score=self.__score+self.board[index]-offset
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -200,7 +226,7 @@ class Game(object):
                         #put them at the index i_col+out of B and remove from L
                         B[i_row*4+out]=L.pop(0)
                     else:#put 0 at same index
-                        B[i_row*4+out]=0
+                        B[i_row*4+out]=offset
                     out-=1
 
         elif dir == "left":
@@ -216,15 +242,15 @@ class Game(object):
                     iindex=4*i_row+i_col
                     b4.append(self.board[iindex])
                     #check if curr == (cur -1), add together and make joined=true
-                    if self.board[index] != 0:#if not zero
+                    if self.board[index] != offset:#if not zero
                         if (len(L) <1) or (joined==True):#if size <= 1,
                             L.append(self.board[index])#joined = false and append to blank list L
                             joined=False
                         else:#if size > 1, and joined == False
                             if self.board[index] == L[len(L)-1] :#if current is equal to latest entry in L
-                                L[len(L)-1]+=self.board[index]#add current to latest entry in L
+                                L[len(L)-1]+=(self.board[index]-offset)#add current to latest entry in L
                                 #add points
-                                self.score+=self.board[index]
+                                self.__score=self.__score+self.board[index]-offset
                                 joined=True#therefore joinging them (joined=True)
                             else:
                                 #append the value as a new element to L
@@ -240,13 +266,13 @@ class Game(object):
                         #put them at the index i_col+out of B and remove from L
                         B[i_row*4+out]=L.pop(0)
                     else:#put 0 at same index
-                        B[i_row*4+out]=0
+                        B[i_row*4+out]=offset
                     out+=1
         else:
             pass
         #update score
-        if self.score > self.highScore:
-            self.highScore=self.score
+        if self.__score > self.highScore:
+            self.highScore=self.__score
             with open('highScore.txt', 'w') as f:
                 f.write(str(self.highScore))
         #once the loop completes, outside all the if/elif/else statements:
@@ -269,7 +295,7 @@ class Game(object):
         #if there are no more empty slots and none of the same numbers next to one another, game is over
         #first loop through entire array once and check for no zeros
         for b in self.board:
-            if b != 0 :
+            if b != offset :
                 pass
             else:
                 #if any zeros, return with isgameover=false
@@ -300,7 +326,9 @@ class Game(object):
         return self.moved
     #score getter and maybe setter if needed
     def getScore(self):
-        return self.score
+        return self.__score
+    def setScore(self,score):
+        self.__score=score
     #get highscore
     def getHighScore(self):
         return self.highScore
@@ -318,11 +346,13 @@ class main(object):
         #initialize game state
         g= Game() 
         #initialize agent
-        a=Agent(keyboard)
+        
+        a=Agent(keyboard,g)
         #render tiles based on spot in grid
-        def drawTile(x,y,val):
+        def drawTile(x,y,value):
             size=100
             fx,fy=pos_x,pos_y
+            val = value-offset
             if val == 0 :
                 #draw box 
                 pygame.draw.rect(screen,BG_NULL,[(fx+(x*size)),(fy+(y*size)),size,size])
@@ -402,9 +432,10 @@ class main(object):
                 num= inGameFont.render(str(val), 1, FONT_8PLUS)
                 screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))  
         #inf loop for game
+        my_prompts=[]
         while 1:
             #every tick
-
+            
             # load background
             screen.fill((250,248,239))
             #load 4x4 grid
@@ -427,19 +458,23 @@ class main(object):
             label = TitleFont.render("2048", 1, FONT_8PLUS)
             screen.blit(label, (360, 50))
             #render score
-            score = inGameFont.render(("Score: "+str(g.getScore())),1,FONT_24)
+            score = inGameFont.render(("Score: "+str(g.getScore()-offset)),1,FONT_24)
             screen.blit(score,(200,550))
             #highscore
-            highscoredisplay = inGameFont.render(("High Score: "+str(g.getHighScore())),1,FONT_24)
+            highscoredisplay = inGameFont.render(("High Score: "+str(g.getHighScore()-offset)),1,FONT_24)
             screen.blit(highscoredisplay,(200,575))
             #render if game over screen
             if g.getGameOver() :
                 #if game is over cover game with translucent screen that says "press 'SPC' to try again"
-                pygame.draw.rect(screen,FONT_24,[200,150,400,400])
-                endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_8PLUS)
-                screen.blit(endGame,(275,450))
+                endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_24)
+                screen.blit(endGame,(200,600))
+                restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #create the event
+                pygame.event.post(restart)
+            #save in file
+            g.duplicate(False)
             #create event
-            newevent = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think())) #create the event
+            direction=a.think()
+            newevent = pygame.event.Event(pygame.KEYDOWN, key=ord(direction)) #create the event
             pygame.event.post(newevent) #add the event to the queue
             # keyboard handling
             
@@ -449,38 +484,422 @@ class main(object):
                         g.swipe("up")
                         if (g.getMoved()):
                             g.addTile()
+                            my_prompts=[]
                         else:
-                            g.getGameOver()
+                            if( not g.getGameOver()):
+                                my_prompts+='w'
+                                backup = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think(prompt=my_prompts)))
+                                pygame.event.post(backup)
                     if event.key == ord('s'):
                         g.swipe("down")
                         if (g.getMoved()):
                             g.addTile()
+                            my_prompts=[]
                         else:
-                            g.getGameOver()
+                            if( not g.getGameOver()):
+                                my_prompts+='s'
+                                backup = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think(prompt=my_prompts)))
+                                pygame.event.post(backup)
                     if event.key == ord('d'):
                         g.swipe("right")
                         if (g.getMoved()):
                             g.addTile()
+                            my_prompts=[]
                         else:
-                            g.getGameOver()
+                            if( not g.getGameOver()):
+                                my_prompts+='d'
+                                backup = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think(prompt=my_prompts)))
+                                pygame.event.post(backup)
                     if event.key == ord('a'):
                         g.swipe("left")
                         if (g.getMoved()):
                             g.addTile()
+                            my_prompts=[]
                         else:
-                            g.getGameOver()
+                            if( not g.getGameOver()):
+                                my_prompts+='a'
+                                backup = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think(prompt=my_prompts)))
+                                pygame.event.post(backup)
                     if event.key == ord(' '):
                         g.restart()
                 if event.type == pygame.QUIT:
                     pygame.quit() 
                     exit(0)
                 #update
+                g.duplicate(False)
+                # print("score",str(g.getScore()-offset))
                 pygame.display.flip()
+
+
 class Agent(object):
-    def __init__(self,keyboard):
+    
+    def __init__(self,keyboard,game):
         self.keyboard=keyboard
-    def think(self):
-        return 'w'
+        self.g=game
+    
+    def minimax(self, position, alpha, beta, maxPlayer, leaf_node_values):
+        if position > 20:
+            return leaf_node_values[position]
+          
+        #If looking for max value, return max of all children nodes
+        if(maxPlayer):
+            maxEval = -100000000
+
+            for i in range(1,4):
+                evaluate = self.minimax(4*position+i, alpha, beta, False,leaf_node_values)
+                maxEval = max(evaluate, maxEval)
+
+                #Pruning
+                alpha = max(evaluate, maxEval)
+                if(beta <= alpha):
+                    break
+            return maxEval
+
+        #If looking for min value, return min of all children nodes
+        else:
+            minEval = 100000000
+
+            for i in range(1,4):
+                evaluate = self.minimax(4*position+i, alpha, beta, True,leaf_node_values)
+                minEval = min(evaluate, minEval)
+
+                #Pruning
+                beta = min(evaluate, minEval)
+                if(beta <= alpha):
+                    break
+            return minEval
+    def helper(self, g):
+        direction=["up","right","down","left"]
+        #
+        g[0].swipe("up")
+        g[0].swipe("up")
+        g[0].swipe("up")
+        #
+        g[1].swipe("up")
+        g[1].swipe("up")
+        g[1].swipe("right")
+        #
+        g[2].swipe("up")
+        g[2].swipe("up")
+        g[2].swipe("down")
+        #
+        g[3].swipe("up")
+        g[3].swipe("up")
+        g[3].swipe("left")
+        #
+        g[4].swipe("up")
+        g[4].swipe("right")
+        g[4].swipe("up")
+        #
+        g[5].swipe("up")
+        g[5].swipe("right")
+        g[5].swipe("right")
+        #
+        g[6].swipe("up")
+        g[6].swipe("right")
+        g[6].swipe("down")
+        #
+        g[7].swipe("up")
+        g[7].swipe("right")
+        g[7].swipe("left")
+        #
+        g[8].swipe("up")
+        g[8].swipe("down")
+        g[8].swipe("up")
+        #
+        g[9].swipe("up")
+        g[9].swipe("down")
+        g[9].swipe("right")
+        #
+        g[10].swipe("up")
+        g[10].swipe("down")
+        g[10].swipe("down")
+        #
+        g[11].swipe("up")
+        g[11].swipe("down")
+        g[11].swipe("left")
+        #
+        g[12].swipe("up")
+        g[12].swipe("left")
+        g[12].swipe("up")
+        #
+        g[13].swipe("up")
+        g[13].swipe("left")
+        g[13].swipe("right")
+        #
+        g[14].swipe("up")
+        g[14].swipe("left")
+        g[14].swipe("down")
+        #
+        g[15].swipe("up")
+        g[15].swipe("left")
+        g[15].swipe("left")
+        #
+        g[16].swipe("right")
+        g[16].swipe("up")
+        g[16].swipe("up")
+        #
+        g[17].swipe("right")
+        g[17].swipe("up")
+        g[17].swipe("right")
+        #
+        g[18].swipe("right")
+        g[18].swipe("up")
+        g[18].swipe("down")
+        #
+        g[19].swipe("right")
+        g[19].swipe("up")
+        g[19].swipe("left")
+        #
+        g[20].swipe("right")
+        g[20].swipe("right")
+        g[20].swipe("up")
+        #
+        g[21].swipe("right")
+        g[21].swipe("right")
+        g[21].swipe("right")
+        #
+        g[22].swipe("right")
+        g[22].swipe("right")
+        g[22].swipe("down")
+        #
+        g[23].swipe("right")
+        g[23].swipe("right")
+        g[23].swipe("left")
+        #
+        g[24].swipe("right")
+        g[24].swipe("down")
+        g[24].swipe("up")
+        #
+        g[25].swipe("right")
+        g[25].swipe("down")
+        g[25].swipe("right")
+        #
+        g[26].swipe("right")
+        g[26].swipe("down")
+        g[26].swipe("down")
+        #
+        g[27].swipe("right")
+        g[27].swipe("down")
+        g[27].swipe("left")
+        #
+        g[28].swipe("right")
+        g[28].swipe("left")
+        g[28].swipe("up")
+        #
+        g[29].swipe("right")
+        g[29].swipe("left")
+        g[29].swipe("right")
+        #
+        g[30].swipe("right")
+        g[30].swipe("left")
+        g[30].swipe("down")
+        #
+        g[31].swipe("right")
+        g[31].swipe("left")
+        g[31].swipe("left")
+        #
+        g[32].swipe("down")
+        g[32].swipe("up")
+        g[32].swipe("up")
+        #
+        g[33].swipe("down")
+        g[33].swipe("up")
+        g[33].swipe("right")
+        #
+        g[34].swipe("down")
+        g[34].swipe("up")
+        g[34].swipe("down")
+        #
+        g[35].swipe("down")
+        g[35].swipe("up")
+        g[35].swipe("left")
+        #
+        g[36].swipe("down")
+        g[36].swipe("right")
+        g[36].swipe("up")
+        #
+        g[37].swipe("down")
+        g[37].swipe("right")
+        g[37].swipe("right")
+        #
+        g[38].swipe("down")
+        g[38].swipe("right")
+        g[38].swipe("down")
+        #
+        g[39].swipe("down")
+        g[39].swipe("right")
+        g[39].swipe("left")
+        #
+        g[40].swipe("down")
+        g[40].swipe("down")
+        g[40].swipe("up")
+        #
+        g[41].swipe("down")
+        g[41].swipe("down")
+        g[41].swipe("right")
+        #
+        g[42].swipe("down")
+        g[42].swipe("down")
+        g[42].swipe("down")
+        #
+        g[43].swipe("down")
+        g[43].swipe("down")
+        g[43].swipe("left")
+        #
+        g[44].swipe("down")
+        g[44].swipe("left")
+        g[44].swipe("up")
+        #
+        g[45].swipe("down")
+        g[45].swipe("left")
+        g[45].swipe("right")
+        #
+        g[46].swipe("down")
+        g[46].swipe("left")
+        g[46].swipe("down")
+        #
+        g[47].swipe("down")
+        g[47].swipe("left")
+        g[47].swipe("left")
+        #
+        g[48].swipe("left")
+        g[48].swipe("up")
+        g[48].swipe("up")
+        #
+        g[49].swipe("left")
+        g[49].swipe("up")
+        g[49].swipe("right")
+        #
+        g[50].swipe("left")
+        g[50].swipe("up")
+        g[50].swipe("down")
+        #
+        g[51].swipe("left")
+        g[51].swipe("up")
+        g[51].swipe("left")
+        #
+        g[52].swipe("left")
+        g[52].swipe("right")
+        g[52].swipe("up")
+        #
+        g[53].swipe("left")
+        g[53].swipe("right")
+        g[53].swipe("right")
+        #
+        g[54].swipe("left")
+        g[54].swipe("right")
+        g[54].swipe("down")
+        #
+        g[55].swipe("left")
+        g[55].swipe("right")
+        g[55].swipe("left")
+        #
+        g[56].swipe("left")
+        g[56].swipe("down")
+        g[56].swipe("up")
+        #
+        g[57].swipe("left")
+        g[57].swipe("down")
+        g[57].swipe("right")
+        #
+        g[58].swipe("left")
+        g[58].swipe("down")
+        g[58].swipe("down")
+        #
+        g[59].swipe("left")
+        g[59].swipe("down")
+        g[59].swipe("left")
+        #
+        g[60].swipe("left")
+        g[60].swipe("left")
+        g[60].swipe("up")
+        #
+        g[61].swipe("left")
+        g[61].swipe("left")
+        g[61].swipe("right")
+        #
+        g[62].swipe("left")
+        g[62].swipe("left")
+        g[62].swipe("down")
+        #
+        g[63].swipe("left")
+        g[63].swipe("left")
+        g[63].swipe("left")
+        
+    def think(self,prompt=[]):
+        print(prompt)
+        if len(prompt)==3:
+            if 'w' not in prompt:
+                return 'w'
+            if 'a' not in prompt:
+                return 'a'
+            if 's' not in prompt:
+                return 's'
+            if 'd' not in prompt:
+                return 'd'
+        output=[]
+        for width in range(2):
+            depth=3
+            leaves=64
+            w,a,s,d=[],[],[],[]
+            #what is the score if we swipe in each direction and return the highest scoring direction
+            direction=['up','right','down','left']
+            leaf_node_values=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            g=[Game() for i in range(leaves)]
+            for game in g:
+                game = (game.duplicate(True))
+            self.helper(g)
+            for i in range(leaves):
+                if i<16:
+                    if 'w' in prompt :
+                        leaf_node_values.append(0)
+                    else:
+                        leaf_node_values.append(g[i].getScore())
+                if i>=16 and i<32:
+                    if 'd' in prompt :
+                        leaf_node_values.append(0)
+                    else:
+                        leaf_node_values.append(g[i].getScore())
+                if i>=32 and i<48:
+                    if 's' in prompt :
+                        leaf_node_values.append(0)
+                    else:
+                        leaf_node_values.append(g[i].getScore())
+                if i>=48 and i<64:
+                    if 'a' in prompt :
+                        leaf_node_values.append(0)
+                    else:
+                        leaf_node_values.append(g[i].getScore())
+            # print(leaf_node_values[0])
+            # print(leaf_node_values[1:5])
+            # print(leaf_node_values[5:21])
+            # print("w: ",leaf_node_values[21:37])#w
+            # print("d: ",leaf_node_values[37:53])#d
+            # print("s: ",leaf_node_values[53:69])#s
+            # print("a: ",leaf_node_values[69:85])#a
+            
+            a,b=-100000000,100000000
+            root_node_value=self.minimax(0,a,b,True,leaf_node_values)
+            # print ("root_node_value: ",root_node_value)
+            leaf_index=leaf_node_values.index(root_node_value,21)
+            
+            if leaf_index >=21 and leaf_index < 37:
+                output.append('w')
+            if leaf_index >=37 and leaf_index < 53:
+                output.append('d')
+            if leaf_index >=53 and leaf_index < 69:
+                output.append('s')
+            if leaf_index >=69 and leaf_index <= 85:
+                output.append('a')
+        
+        out=random.choice(output)
+        print("out: ",output)
+        return out
+    
+        
+
+
 #call main
 if __name__ == '__main__':
     main(width,height)
