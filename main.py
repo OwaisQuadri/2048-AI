@@ -6,6 +6,7 @@ import os
 import random
 import copy
 import time
+from statistics import mean
 from pynput.keyboard import Key,Controller
 keyboard=Controller()
 #init pygame 
@@ -97,11 +98,13 @@ class Game(object):
                 mt.append(curr)
             curr+=1
         #if empty array isnt empty there are avail spaces
-        if len(mt) != 0:
+        self.empty_spaces=len(mt)
+        if self.empty_spaces != 0:
             #randomly select square
             index=random.choice(mt)
             #randomly select value
             self.board[index]=offset+random.choice([2,2,2,2,2,2,2,2,2,4])
+            self.empty_spaces-=1
     #movement
     
     def swipe(self,dir):
@@ -296,9 +299,7 @@ class Game(object):
         #if there are no more empty slots and none of the same numbers next to one another, game is over
         #first loop through entire array once and check for no zeros
         for b in self.board:
-            if b != offset :
-                pass
-            else:
+            if b == offset :
                 #if any zeros, return with isgameover=false
                 self.isGameOver=False
                 return self.isGameOver
@@ -333,6 +334,9 @@ class Game(object):
     #get highscore
     def getHighScore(self):
         return self.highScore
+    #utility score 
+    def getUtility(self):
+        #combination of score, #of empty tiles,
 #main class
 class main(object):
     def __init__(self,width,height):
@@ -469,10 +473,10 @@ class main(object):
                 #if game is over cover game with translucent screen that says "press 'SPC' to try again"
                 endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_24)
                 screen.blit(endGame,(200,600))
-                
+                total_games,numOf_512,numOf_1024,numOf_2048,numOf_4096,numOf_8192=0,0,0,0,0,0
                 if not g.recorded:
                     highest_tile=max(g.get_board())-offset
-                    total_games,numOf_512,numOf_1024,numOf_2048,numOf_4096,numOf_8192=0,0,0,0,0,0
+                    
                     with open('records.txt', 'r') as f:
                         f.seek(0)
                         c=0
@@ -538,7 +542,6 @@ class main(object):
                         f.write(str(numOf_8192))
                     g.recorded=True
                 #restart game
-                time.sleep(0.75)
                 restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #autorestart (comment out if not testing)
                 pygame.event.post(restart)
             #save in file
@@ -877,7 +880,10 @@ class Agent(object):
                 return 's'
             if 'd' not in prompt:
                 return 'd'
-        output=[]
+        wMean=[]
+        aMean=[]
+        sMean=[]
+        dMean=[]
         for width in range(1):
             depth=3
             leaves=64
@@ -889,12 +895,15 @@ class Agent(object):
             for game in g:
                 game = (game.duplicate(True))
             self.helper(g)
+            
             for i in range(leaves):
                 if i<16:
                     if 'w' in prompt :
                         leaf_node_values.append(0)
                     else:
-                        leaf_node_values.append(g[i].getScore())
+                        utility=g[i].getUtility()
+                        
+                        leaf_node_values.append( utility )
                 if i>=16 and i<32:
                     if 'd' in prompt :
                         leaf_node_values.append(0)
@@ -917,23 +926,39 @@ class Agent(object):
             # print("d: ",leaf_node_values[37:53])#d
             # print("s: ",leaf_node_values[53:69])#s
             # print("a: ",leaf_node_values[69:85])#a
+            
+            # average wasd leaf nodes and use highest
+            wMean.append(mean(leaf_node_values[21:37]))
+            dMean.append(mean(leaf_node_values[37:53]))
+            sMean.append(mean(leaf_node_values[53:69]))
+            aMean.append(mean(leaf_node_values[69:85]))
+        W=mean(wMean)
+        A=mean(aMean)
+        S=mean(sMean)
+        D=mean(dMean)
+        root_node_value=max([W,A,S,D])
+        if root_node_value is W:
+            return 'w'
+        elif root_node_value is A:
+            return 'a'
+        elif root_node_value is S:
+            return 's'
+        else:
+            return 'd'
+            # leaf_index=leaf_node_values.index(root_node_value,21)
+            # # print(root_node_value," at ",leaf_index)
+            # if leaf_index >=21 and leaf_index < 37:
+            #     output.append('w')
+            # if leaf_index >=37 and leaf_index < 53:
+            #     output.append('d')
+            # if leaf_index >=53 and leaf_index < 69:
+            #     output.append('s')
+            # if leaf_index >=69 and leaf_index <= 85:
+            #     output.append('a')
         
-            # print ("root_node_value: ",root_node_value)
-            root_node_value=max(leaf_node_values)
-            leaf_index=leaf_node_values.index(root_node_value,21)
-            # print(root_node_value," at ",leaf_index)
-            if leaf_index >=21 and leaf_index < 37:
-                output.append('w')
-            if leaf_index >=37 and leaf_index < 53:
-                output.append('d')
-            if leaf_index >=53 and leaf_index < 69:
-                output.append('s')
-            if leaf_index >=69 and leaf_index <= 85:
-                output.append('a')
-        
-        out=random.choice(output)
-        # print("out: ",output)
-        return out
+        # out=random.choice(output)
+        # # print("out: ",output)
+        # return out
     
 #call main
 if __name__ == '__main__':
