@@ -5,6 +5,8 @@ import sys
 import os
 import random
 import copy
+import time
+from statistics import mean
 from pynput.keyboard import Key,Controller
 keyboard=Controller()
 #init pygame 
@@ -53,7 +55,8 @@ class Game(object):
         self.addTile()
         self.addTile()
         self.__score=offset
-        self.isGameOver=False    
+        self.isGameOver=False
+        self.recorded=False    
     def duplicate(self,get):
         if get:
             L=[]
@@ -95,7 +98,8 @@ class Game(object):
                 mt.append(curr)
             curr+=1
         #if empty array isnt empty there are avail spaces
-        if len(mt) != 0:
+        self.empty_spaces=len(mt)
+        if self.empty_spaces != 0:
             #randomly select square
             index=random.choice(mt)
             #randomly select value
@@ -228,7 +232,6 @@ class Game(object):
                     else:#put 0 at same index
                         B[i_row*4+out]=offset
                     out-=1
-
         elif dir == "left":
             #then
             # 0 > 1 > 2 > 3
@@ -295,9 +298,7 @@ class Game(object):
         #if there are no more empty slots and none of the same numbers next to one another, game is over
         #first loop through entire array once and check for no zeros
         for b in self.board:
-            if b != offset :
-                pass
-            else:
+            if b == offset :
                 #if any zeros, return with isgameover=false
                 self.isGameOver=False
                 return self.isGameOver
@@ -334,19 +335,16 @@ class Game(object):
         return self.highScore
 #main class
 class main(object):
-    
     def __init__(self,width,height):
         self.width=width
         self.height=height
         self.Main()
     
-
     def Main(self):
         #Put all variables up here
         #initialize game state
         g= Game() 
         #initialize agent
-        
         a=Agent(keyboard,g)
         #render tiles based on spot in grid
         def drawTile(x,y,value):
@@ -430,7 +428,8 @@ class main(object):
                 pygame.draw.rect(screen,BG_HIGH,[(fx+(x*size)),(fy+(y*size)),size,size])
                 #draw lettering
                 num= inGameFont.render(str(val), 1, FONT_8PLUS)
-                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))  
+                screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))
+        highest_tile=0
         #inf loop for game
         my_prompts=[]
         while 1:
@@ -468,7 +467,76 @@ class main(object):
                 #if game is over cover game with translucent screen that says "press 'SPC' to try again"
                 endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_24)
                 screen.blit(endGame,(200,600))
-                restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #create the event
+                total_games,numOf_512,numOf_1024,numOf_2048,numOf_4096,numOf_8192=0,0,0,0,0,0
+                if not g.recorded:
+                    highest_tile=max(g.get_board())-offset
+                    
+                    with open('records.txt', 'r') as f:
+                        f.seek(0)
+                        c=0
+                        for line in f:
+                            if c==0:
+                                for word in line.split():
+                                    total_games=int(float(word))
+                            elif c==1:
+                                for word in line.split():
+                                    numOf_512=int(float(word))
+                            elif c==2:
+                                for word in line.split():
+                                    numOf_1024=int(float(word))
+                            elif c==3:
+                                for word in line.split():
+                                    numOf_2048=int(float(word))
+                            elif c==4:
+                                for word in line.split():
+                                    numOf_4096=int(float(word))
+                            elif c==5:
+                                for word in line.split():
+                                    numOf_8192=int(float(word))
+                            c+=1
+                    #update with this current game
+                    total_games+=1
+                    if highest_tile >= 512:
+                        numOf_512+=1
+                    if highest_tile >= 1024:
+                        numOf_1024+=1
+                    if highest_tile >= 2048:
+                        numOf_2048+=1
+                    if highest_tile >= 4096:
+                        numOf_4096+=1
+                    if highest_tile >= 8192:
+                        numOf_8192+=1
+                    
+                    #output percentages in console
+                    percent_512=(numOf_512/total_games)*100
+                    percent_1024=(numOf_1024/total_games)*100
+                    percent_2048=(numOf_2048/total_games)*100
+                    percent_4096=(numOf_4096/total_games)*100
+                    percent_8192=(numOf_8192/total_games)*100
+                    print('')
+                    print("Number of games played: ",total_games)
+                    print("")
+                    print("512: ",percent_512,"%")
+                    print("1024: ",percent_1024,"%")
+                    print("2048: ",percent_2048,"%")
+                    print("4096: ",percent_4096,"%")
+                    print("8192: ",percent_8192,"%")
+                    
+                    with open('records.txt', 'w') as f:
+                        f.write(str(total_games))
+                        f.write("\n")
+                        f.write(str(numOf_512))
+                        f.write("\n")
+                        f.write(str(numOf_1024))
+                        f.write("\n")
+                        f.write(str(numOf_2048))
+                        f.write("\n")
+                        f.write(str(numOf_4096))
+                        f.write("\n")
+                        f.write(str(numOf_8192))
+                    g.recorded=True
+                #restart game
+                restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #autorestart (comment out if not testing)
                 pygame.event.post(restart)
             #save in file
             g.duplicate(False)
@@ -477,7 +545,7 @@ class main(object):
             newevent = pygame.event.Event(pygame.KEYDOWN, key=ord(direction)) #create the event
             pygame.event.post(newevent) #add the event to the queue
             # keyboard handling
-            
+                
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN :
                     if event.key == ord('w') :
@@ -527,7 +595,6 @@ class main(object):
                     exit(0)
                 #update
                 g.duplicate(False)
-                # print("score",str(g.getScore()-offset))
                 pygame.display.flip()
 
 
@@ -537,37 +604,7 @@ class Agent(object):
         self.keyboard=keyboard
         self.g=game
     
-    def minimax(self, position, alpha, beta, maxPlayer, leaf_node_values):
-        if position > 20:
-            return leaf_node_values[position]
-          
-        #If looking for max value, return max of all children nodes
-        if(maxPlayer):
-            maxEval = -100000000
-
-            for i in range(1,4):
-                evaluate = self.minimax(4*position+i, alpha, beta, False,leaf_node_values)
-                maxEval = max(evaluate, maxEval)
-
-                #Pruning
-                alpha = max(evaluate, maxEval)
-                if(beta <= alpha):
-                    break
-            return maxEval
-
-        #If looking for min value, return min of all children nodes
-        else:
-            minEval = 100000000
-
-            for i in range(1,4):
-                evaluate = self.minimax(4*position+i, alpha, beta, True,leaf_node_values)
-                minEval = min(evaluate, minEval)
-
-                #Pruning
-                beta = min(evaluate, minEval)
-                if(beta <= alpha):
-                    break
-            return minEval
+    
     def helper(self, g):
         direction=["up","right","down","left"]
         #
@@ -828,7 +865,6 @@ class Agent(object):
         g[63].swipe("left")
         
     def think(self,prompt=[]):
-        print(prompt)
         if len(prompt)==3:
             if 'w' not in prompt:
                 return 'w'
@@ -838,8 +874,11 @@ class Agent(object):
                 return 's'
             if 'd' not in prompt:
                 return 'd'
-        output=[]
-        for width in range(2):
+        wMean=[]
+        aMean=[]
+        sMean=[]
+        dMean=[]
+        for width in range(1):
             depth=3
             leaves=64
             w,a,s,d=[],[],[],[]
@@ -850,12 +889,13 @@ class Agent(object):
             for game in g:
                 game = (game.duplicate(True))
             self.helper(g)
+            
             for i in range(leaves):
                 if i<16:
                     if 'w' in prompt :
                         leaf_node_values.append(0)
                     else:
-                        leaf_node_values.append(g[i].getScore())
+                        leaf_node_values.append( g[i].getScore() )
                 if i>=16 and i<32:
                     if 'd' in prompt :
                         leaf_node_values.append(0)
@@ -871,6 +911,7 @@ class Agent(object):
                         leaf_node_values.append(0)
                     else:
                         leaf_node_values.append(g[i].getScore())
+            
             # print(leaf_node_values[0])
             # print(leaf_node_values[1:5])
             # print(leaf_node_values[5:21])
@@ -879,27 +920,25 @@ class Agent(object):
             # print("s: ",leaf_node_values[53:69])#s
             # print("a: ",leaf_node_values[69:85])#a
             
-            a,b=-100000000,100000000
-            root_node_value=self.minimax(0,a,b,True,leaf_node_values)
-            # print ("root_node_value: ",root_node_value)
-            leaf_index=leaf_node_values.index(root_node_value,21)
-            
-            if leaf_index >=21 and leaf_index < 37:
-                output.append('w')
-            if leaf_index >=37 and leaf_index < 53:
-                output.append('d')
-            if leaf_index >=53 and leaf_index < 69:
-                output.append('s')
-            if leaf_index >=69 and leaf_index <= 85:
-                output.append('a')
-        
-        out=random.choice(output)
-        print("out: ",output)
-        return out
+            # average wasd leaf nodes and use highest (expectimax)
+            wMean.append(mean(leaf_node_values[21:37]))
+            dMean.append(mean(leaf_node_values[37:53]))
+            sMean.append(mean(leaf_node_values[53:69]))
+            aMean.append(mean(leaf_node_values[69:85]))
+        W=mean(wMean)
+        A=mean(aMean)
+        S=mean(sMean)
+        D=mean(dMean)
+        root_node_value=max([W,A,S,D])
+        if root_node_value is W:
+            return 'w'
+        elif root_node_value is A:
+            return 'a'
+        elif root_node_value is S:
+            return 's'
+        else:
+            return 'd'
     
-        
-
-
 #call main
 if __name__ == '__main__':
     main(width,height)
