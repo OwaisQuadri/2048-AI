@@ -531,8 +531,11 @@ class main(object):
                     totaltime=datetime.datetime.now()-starttime
                     moves_per_sec=moves/totaltime.seconds
                     print('')
+                    print("Game Summary")
+                    print("Number of moves: ", moves)
                     print("Highest Tile: ",highest_tile)
                     print("moves per second: ",moves_per_sec)
+                    print('')
                     with open('records.txt', 'w') as f:
                         f.write(str(total_games))
                         f.write("\n")
@@ -891,9 +894,9 @@ class Agent(object):
         aMean=[]
         sMean=[]
         dMean=[]
-        for width in range(16):
-            depth=3
+        for depth in range(8):
             leaves=64
+            #number of simulations = depth x leaves (now 256)
             w,a,s,d=[],[],[],[]
             #what is the score if we swipe in each direction and return the highest scoring direction
             direction=['up','right','down','left']
