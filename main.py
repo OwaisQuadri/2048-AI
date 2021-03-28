@@ -1,26 +1,29 @@
+#GLOBAL VARIABLES
 #imports
-import copy
 import pygame
 import sys
 import os
-import random
-import copy
-import datetime
-from statistics import mean
-from pynput.keyboard import Key,Controller
-keyboard=Controller()
+import random#to randomize tile locations
+import datetime#to calculate moves per second
+from statistics import mean#for averaging in expectimax
+from pynput.keyboard import Key,Controller#for key input simulations and event handling
+keyboard=Controller()#init keyboard simulator
+import time#for sleep function if we want to slow down the game
 #init pygame 
 pygame.init()
+#put the logo in the title bar
 pygame.display.set_caption('2048')
 pygame.display.set_icon(pygame.image.load(r'./2048_logo.png'))
+#initialize fonts
 pygame.font.init()
-#init my font
 TitleFont = pygame.font.Font(r'./csb.ttf', 36)
 inGameFont= pygame.font.Font(r'./csb.ttf', 24)
-# dimensions
+#init the format for decimal values
+form="{:.2f}"
+# frame dimensions
 width, height = 80*10, 80*8
 screen=pygame.display.set_mode((width, height))
-#global variables
+#need an offset on score and board so that the copies of those values don't retain the same id()
 offset=500
 #define colours
 FONT_24=(119,110,101)
@@ -40,24 +43,56 @@ BG_512=(237,200,80)
 BG_1024=(237,197,63)
 BG_2048=(237,194,46)
 BG_HIGH=(60,58,50)
-#define static renders
+#import grid image 
 bg=pygame.image.load(r'./bg.png')
-#game state class
+"""
+Game Class:
+
+    Class that saves and updates the game state
+
+    Class Attributes:
+        - board : integer list
+        - __score : integer 
+        - isGameOver : boolean
+        - recorded : boolean 
+        - moved : boolean 
+    Operations:
+        - __init__(self)
+        - duplicate(self,get)
+        - prnt(self)
+        - restart(self)
+        - addTile(self)
+        - swipe(self,dir,test=False)
+        - get_board(self)
+        - set_board(self,b,b4)
+        - setGameOver(self, xyz)
+        - setMoved(self, xyz)
+        - getMoved(self)
+        - getScore(self)
+        - setScore(self,score)
+        - getHighScore(self)
+"""
 class Game(object):
-    #high score
+    #read and input high score
     with open('highScore.txt', 'r') as f:
+        #go to line 0 and read highscore and if gameOver is true, turn to false
         f.seek(0)
         highScore=(int(float(f.read())))
         isGameOver=False
-    moved=False
+    #constuct
     def __init__(self):
         self.board=[offset for i in range(16)]
         self.addTile()
         self.addTile()
         self.__score=offset
         self.isGameOver=False
-        self.recorded=False    
+        self.recorded=False
+        self.moved=False  
+    #copy game state so that multiple instances can be simulated
     def duplicate(self,get):
+        #game state is saved in file with board and score
+        #get parameter to know whether getting or setting current state
+        #if get : read and save in new instance to deepcopy these attributes
         if get:
             L=[]
             score=[]
@@ -74,7 +109,7 @@ class Game(object):
                     c+=1
             self.board=L
             self.setScore(score[0])           
-        else:
+        else:#else write board and score in file
             with open('currentBoard', 'w') as f:
                 boardString=""
                 for b in self.board:
@@ -82,12 +117,15 @@ class Game(object):
                 f.write(boardString)
                 f.write("\n")
                 f.write(str(self.getScore()))
+    #print board onto command line for debugging
     def prnt(self):
+        #4 by 4 grid
         for x in range(4):
             print(str(self.board[4*x]-offset)," ",str(self.board[4*x+1]-offset)," ",str(self.board[4*x+2]-offset)," ",str(self.board[4*x+3]-offset))
+    #restart the game without closing the application
     def restart(self):
-        self.__init__()
-    
+        self.__init__()    
+    #add tile to random empty space on board (10% chance of 4, 90% chance of 2)
     def addTile(self):
         mt=[]
         curr=0
@@ -105,8 +143,7 @@ class Game(object):
             #randomly select value
             self.board[index]=offset+random.choice([2,2,2,2,2,2,2,2,2,4])
             self.empty_spaces-=1
-    #movement
-    
+    #swipe board and combine like,adjacent tiles, update score and set highscore 
     def swipe(self,dir,test=False):
         self.moved=False
         joined=False
@@ -282,7 +319,7 @@ class Game(object):
         #once the loop completes, outside all the if/elif/else statements:
         # do g.setBoard with B, which is the overall board list
         self.set_board(B,b4)
-        if test:
+        if test:#if a simulated game
             if self.moved:
                 self.addTile()
     #board getter setter
@@ -336,13 +373,30 @@ class Game(object):
     #get highscore
     def getHighScore(self):
         return self.highScore
-#main class
+"""
+Main Class:
+
+    Class that runs the game and updates the GUI and 
+    main gamestate every tick. also accepts input from the
+    Agent insatnce that returns the best move for the current
+    game state.
+
+    Class Attributes:
+        - width : integer
+        - height : integer
+
+    Operations:
+        - __init__(self)
+        - Main(self)
+            - drawTile(x,y,value)
+"""
 class main(object):
+    #constructor
     def __init__(self,width,height):
         self.width=width
         self.height=height
         self.Main()
-    
+    #main function
     def Main(self):
         #Put all variables up here
         #initialize game state
@@ -433,10 +487,13 @@ class main(object):
                 num= inGameFont.render(str(val), 1, FONT_8PLUS)
                 screen.blit(num, ((fx+(x*size-3*x))+25, (fy+(y*size-3*y))+35))
         highest_tile=0
-        #inf loop for game
+        #init the prompt to know which moves are not possible
         my_prompts=[]
+        #count moves
         moves=0
+        #how much time per game (start)
         starttime=datetime.datetime.now()
+        #inf loop for game
         while 1:
             #every in game tick we make 1 move
             #calculate moves per second in current run
@@ -475,9 +532,9 @@ class main(object):
                 endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_24)
                 screen.blit(endGame,(200,600))
                 total_games,numOf_512,numOf_1024,numOf_2048,numOf_128,numOf_256=0,0,0,0,0,0
-                if not g.recorded:
+                if not g.recorded:#only 1 record per game at the end
                     highest_tile=max(g.get_board())-offset
-                    
+                    #read the records and update
                     with open('records.txt', 'r') as f:
                         f.seek(0)
                         c=0
@@ -523,19 +580,20 @@ class main(object):
                     print('')
                     print("Number of games played: ",total_games)
                     print("")
-                    print("128: ",percent_128,"%")
-                    print("256: ",percent_256,"%")
-                    print("512: ",percent_512,"%")
-                    print("1024: ",percent_1024,"%")
-                    print("2048: ",percent_2048,"%")
+                    print("128: ",form.format(percent_128),"%")
+                    print("256: ",form.format(percent_256),"%")
+                    print("512: ",form.format(percent_512),"%")
+                    print("1024: ",form.format(percent_1024),"%")
+                    print("2048: ",form.format(percent_2048),"%")
                     totaltime=datetime.datetime.now()-starttime
                     moves_per_sec=moves/totaltime.seconds
                     print('')
                     print("Game Summary")
                     print("Number of moves: ", moves)
                     print("Highest Tile: ",highest_tile)
-                    print("moves per second: ",moves_per_sec)
+                    print("moves per second: ",form.format(moves_per_sec))
                     print('')
+                    #replace the records with the updated values
                     with open('records.txt', 'w') as f:
                         f.write(str(total_games))
                         f.write("\n")
@@ -549,12 +607,12 @@ class main(object):
                         f.write("\n")
                         f.write(str(numOf_2048))
                     g.recorded=True
-                #restart game
-                restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #autorestart (comment out if not testing)
-                pygame.event.post(restart)
+                # #restart game if autorestart wanted
+                # restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #autorestart (comment out if not testing)
+                # pygame.event.post(restart)
                 moves=0
                 starttime=datetime.datetime.now()
-            #save in file
+            #save game state in file
             g.duplicate(False)
             #create event
             direction=a.think()
@@ -568,10 +626,10 @@ class main(object):
                         g.swipe("up")
                         if (g.getMoved()):
                             g.addTile()
-                            my_prompts=[]
+                            my_prompts=[]#reset prompt if moved
                         else:
                             if( not g.getGameOver()):
-                                my_prompts+='w'
+                                my_prompts+='w'#since we cant move in this direction, add to prompt
                                 backup = pygame.event.Event(pygame.KEYDOWN, key=ord(a.think(prompt=my_prompts)))
                                 pygame.event.post(backup)
                     if event.key == ord('s'):
@@ -610,17 +668,30 @@ class main(object):
                     pygame.quit() 
                     exit(0)
                 #update
-                g.duplicate(False)
-                pygame.display.flip()
+                g.duplicate(False)#game state
+                pygame.display.flip()#gui
+                #time.sleep(0.8)#delay on each move for comprehension
+"""
+Agent Class:
 
+    Class that decides best move for current game state using 
+    the expectimax AI algorithm
 
+    Class Attributes:
+        - keyboard : Controller 
+        - g : Game
+
+    Operations:
+        - __init__(self,keyboard,game)
+        - helper(self, g)
+        - 
+"""
 class Agent(object):
-    
+    #constructor
     def __init__(self,keyboard,game):
         self.keyboard=keyboard
         self.g=game
-    
-    
+    #runs all the combinations of moves 3 moves deep
     def helper(self, g):
         direction=["up","right","down","left"]
         #
@@ -879,8 +950,9 @@ class Agent(object):
         g[63].swipe("left",True)
         g[63].swipe("left",True)
         g[63].swipe("left",True)
-        
+    #use current game state and return the best move
     def think(self,prompt=[]):
+        #if there are 3 elements in the prompt list there is only 1 direction to go
         if len(prompt)==3:
             if 'w' not in prompt:
                 return 'w'
@@ -890,62 +962,76 @@ class Agent(object):
                 return 's'
             if 'd' not in prompt:
                 return 'd'
+        #each el in the list carries the mean score for every test case
         wMean=[]
         aMean=[]
         sMean=[]
         dMean=[]
+        #8 test cases to take into account some randomness from the new tile position
         for depth in range(8):
+            #number of leaves in tree = 4^3=64
             leaves=64
-            #number of simulations = depth x leaves (now 256)
+            #number of simulations = depth x leaves (now 512)
+            #number of simulations per unique first move direction= 128
             w,a,s,d=[],[],[],[]
-            #what is the score if we swipe in each direction and return the highest scoring direction
+            #what is the score if we swipe in each direction from the current state
             direction=['up','right','down','left']
-            leaf_node_values=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            #in a tree, there will be 21 '0' nodes before any leaf nodes
+            nodes_in_tree=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            #create leaf game states
             g=[Game() for i in range(leaves)]
+            #all must be a copy of the current game state 
+            #using copy.deepcopy does not copy the score or board array
             for game in g:
                 game = (game.duplicate(True))
+            #all leaf states must be simulated to their respective swipe directions
             self.helper(g)
-            
+            #add to tree nodes by order of WDSA 
+            #if prompt says no to that direction add 0
             for i in range(leaves):
                 if i<16:
                     if 'w' in prompt :
-                        leaf_node_values.append(0)
+                        nodes_in_tree.append(0)
                     else:
-                        leaf_node_values.append( g[i].getScore() )
+                        nodes_in_tree.append( g[i].getScore() )
                 if i>=16 and i<32:
                     if 'd' in prompt :
-                        leaf_node_values.append(0)
+                        nodes_in_tree.append(0)
                     else:
-                        leaf_node_values.append(g[i].getScore())
+                        nodes_in_tree.append(g[i].getScore())
                 if i>=32 and i<48:
                     if 's' in prompt :
-                        leaf_node_values.append(0)
+                        nodes_in_tree.append(0)
                     else:
-                        leaf_node_values.append(g[i].getScore())
+                        nodes_in_tree.append(g[i].getScore())
                 if i>=48 and i<64:
                     if 'a' in prompt :
-                        leaf_node_values.append(0)
+                        nodes_in_tree.append(0)
                     else:
-                        leaf_node_values.append(g[i].getScore())
+                        nodes_in_tree.append(g[i].getScore())
+            #print statements to debug
+            # print(nodes_in_tree[0])
+            # print(nodes_in_tree[1:5])
+            # print(nodes_in_tree[5:21])
+            # print("w: ",nodes_in_tree[21:37])#w
+            # print("d: ",nodes_in_tree[37:53])#d
+            # print("s: ",nodes_in_tree[53:69])#s
+            # print("a: ",nodes_in_tree[69:85])#a
             
-            # print(leaf_node_values[0])
-            # print(leaf_node_values[1:5])
-            # print(leaf_node_values[5:21])
-            # print("w: ",leaf_node_values[21:37])#w
-            # print("d: ",leaf_node_values[37:53])#d
-            # print("s: ",leaf_node_values[53:69])#s
-            # print("a: ",leaf_node_values[69:85])#a
-            
-            # average wasd leaf nodes and use highest (expectimax)
-            wMean.append(mean(leaf_node_values[21:37]))
-            dMean.append(mean(leaf_node_values[37:53]))
-            sMean.append(mean(leaf_node_values[53:69]))
-            aMean.append(mean(leaf_node_values[69:85]))
+            # average wasd leaf nodes (expectimax) 
+            # append to total averages when moving in that direction first
+            wMean.append(mean(nodes_in_tree[21:37]))
+            dMean.append(mean(nodes_in_tree[37:53]))
+            sMean.append(mean(nodes_in_tree[53:69]))
+            aMean.append(mean(nodes_in_tree[69:85]))
+        #average the total means of moving in that direction
         W=mean(wMean)
         A=mean(aMean)
         S=mean(sMean)
         D=mean(dMean)
+        #get max mean score and its direction
         root_node_value=max([W,A,S,D])
+        #return the direction
         if root_node_value is W:
             return 'w'
         elif root_node_value is A:
