@@ -5,7 +5,7 @@ import sys
 import os
 import random
 import copy
-import time
+import datetime
 from statistics import mean
 from pynput.keyboard import Key,Controller
 keyboard=Controller()
@@ -107,7 +107,7 @@ class Game(object):
             self.empty_spaces-=1
     #movement
     
-    def swipe(self,dir):
+    def swipe(self,dir,test=False):
         self.moved=False
         joined=False
         #create empty list L and B
@@ -282,7 +282,9 @@ class Game(object):
         #once the loop completes, outside all the if/elif/else statements:
         # do g.setBoard with B, which is the overall board list
         self.set_board(B,b4)
-    
+        if test:
+            if self.moved:
+                self.addTile()
     #board getter setter
     def get_board(self):
         return self.board
@@ -433,9 +435,13 @@ class main(object):
         highest_tile=0
         #inf loop for game
         my_prompts=[]
+        moves=0
+        starttime=datetime.datetime.now()
         while 1:
-            #every tick
+            #every in game tick we make 1 move
+            #calculate moves per second in current run
             
+            moves+=1
             # load background
             screen.fill((250,248,239))
             #load 4x4 grid
@@ -468,7 +474,7 @@ class main(object):
                 #if game is over cover game with translucent screen that says "press 'SPC' to try again"
                 endGame= inGameFont.render(("press 'SPC' to try again"),1,FONT_24)
                 screen.blit(endGame,(200,600))
-                total_games,numOf_512,numOf_1024,numOf_2048,numOf_4096,numOf_8192=0,0,0,0,0,0
+                total_games,numOf_512,numOf_1024,numOf_2048,numOf_128,numOf_256=0,0,0,0,0,0
                 if not g.recorded:
                     highest_tile=max(g.get_board())-offset
                     
@@ -479,21 +485,21 @@ class main(object):
                             if c==0:
                                 for word in line.split():
                                     total_games=int(float(word))
-                            elif c==1:
-                                for word in line.split():
-                                    numOf_512=int(float(word))
-                            elif c==2:
-                                for word in line.split():
-                                    numOf_1024=int(float(word))
                             elif c==3:
                                 for word in line.split():
-                                    numOf_2048=int(float(word))
+                                    numOf_512=int(float(word))
                             elif c==4:
                                 for word in line.split():
-                                    numOf_4096=int(float(word))
+                                    numOf_1024=int(float(word))
                             elif c==5:
                                 for word in line.split():
-                                    numOf_8192=int(float(word))
+                                    numOf_2048=int(float(word))
+                            elif c==1:
+                                for word in line.split():
+                                    numOf_128=int(float(word))
+                            elif c==2:
+                                for word in line.split():
+                                    numOf_256=int(float(word))
                             c+=1
                     #update with this current game
                     total_games+=1
@@ -503,42 +509,48 @@ class main(object):
                         numOf_1024+=1
                     if highest_tile >= 2048:
                         numOf_2048+=1
-                    if highest_tile >= 4096:
-                        numOf_4096+=1
-                    if highest_tile >= 8192:
-                        numOf_8192+=1
+                    if highest_tile >= 128:
+                        numOf_128+=1
+                    if highest_tile >= 256:
+                        numOf_256+=1
                     
                     #output percentages in console
                     percent_512=(numOf_512/total_games)*100
                     percent_1024=(numOf_1024/total_games)*100
                     percent_2048=(numOf_2048/total_games)*100
-                    percent_4096=(numOf_4096/total_games)*100
-                    percent_8192=(numOf_8192/total_games)*100
+                    percent_128=(numOf_128/total_games)*100
+                    percent_256=(numOf_256/total_games)*100
                     print('')
                     print("Number of games played: ",total_games)
                     print("")
+                    print("128: ",percent_128,"%")
+                    print("256: ",percent_256,"%")
                     print("512: ",percent_512,"%")
                     print("1024: ",percent_1024,"%")
                     print("2048: ",percent_2048,"%")
-                    print("4096: ",percent_4096,"%")
-                    print("8192: ",percent_8192,"%")
-                    
+                    totaltime=datetime.datetime.now()-starttime
+                    moves_per_sec=moves/totaltime.seconds
+                    print('')
+                    print("Highest Tile: ",highest_tile)
+                    print("moves per second: ",moves_per_sec)
                     with open('records.txt', 'w') as f:
                         f.write(str(total_games))
+                        f.write("\n")
+                        f.write(str(numOf_128))
+                        f.write("\n")
+                        f.write(str(numOf_256))
                         f.write("\n")
                         f.write(str(numOf_512))
                         f.write("\n")
                         f.write(str(numOf_1024))
                         f.write("\n")
                         f.write(str(numOf_2048))
-                        f.write("\n")
-                        f.write(str(numOf_4096))
-                        f.write("\n")
-                        f.write(str(numOf_8192))
                     g.recorded=True
                 #restart game
                 restart = pygame.event.Event(pygame.KEYDOWN, key=ord(" ")) #autorestart (comment out if not testing)
                 pygame.event.post(restart)
+                moves=0
+                starttime=datetime.datetime.now()
             #save in file
             g.duplicate(False)
             #create event
@@ -609,261 +621,261 @@ class Agent(object):
     def helper(self, g):
         direction=["up","right","down","left"]
         #
-        g[0].swipe("up")
-        g[0].swipe("up")
-        g[0].swipe("up")
+        g[0].swipe("up",True)
+        g[0].swipe("up",True)
+        g[0].swipe("up",True)
         #
-        g[1].swipe("up")
-        g[1].swipe("up")
-        g[1].swipe("right")
+        g[1].swipe("up",True)
+        g[1].swipe("up",True)
+        g[1].swipe("right",True)
         #
-        g[2].swipe("up")
-        g[2].swipe("up")
-        g[2].swipe("down")
+        g[2].swipe("up",True)
+        g[2].swipe("up",True)
+        g[2].swipe("down",True)
         #
-        g[3].swipe("up")
-        g[3].swipe("up")
-        g[3].swipe("left")
+        g[3].swipe("up",True)
+        g[3].swipe("up",True)
+        g[3].swipe("left",True)
         #
-        g[4].swipe("up")
-        g[4].swipe("right")
-        g[4].swipe("up")
+        g[4].swipe("up",True)
+        g[4].swipe("right",True)
+        g[4].swipe("up",True)
         #
-        g[5].swipe("up")
-        g[5].swipe("right")
-        g[5].swipe("right")
+        g[5].swipe("up",True)
+        g[5].swipe("right",True)
+        g[5].swipe("right",True)
         #
-        g[6].swipe("up")
-        g[6].swipe("right")
-        g[6].swipe("down")
+        g[6].swipe("up",True)
+        g[6].swipe("right",True)
+        g[6].swipe("down",True)
         #
-        g[7].swipe("up")
-        g[7].swipe("right")
-        g[7].swipe("left")
+        g[7].swipe("up",True)
+        g[7].swipe("right",True)
+        g[7].swipe("left",True)
         #
-        g[8].swipe("up")
-        g[8].swipe("down")
-        g[8].swipe("up")
+        g[8].swipe("up",True)
+        g[8].swipe("down",True)
+        g[8].swipe("up",True)
         #
-        g[9].swipe("up")
-        g[9].swipe("down")
-        g[9].swipe("right")
+        g[9].swipe("up",True)
+        g[9].swipe("down",True)
+        g[9].swipe("right",True)
         #
-        g[10].swipe("up")
-        g[10].swipe("down")
-        g[10].swipe("down")
+        g[10].swipe("up",True)
+        g[10].swipe("down",True)
+        g[10].swipe("down",True)
         #
-        g[11].swipe("up")
-        g[11].swipe("down")
-        g[11].swipe("left")
+        g[11].swipe("up",True)
+        g[11].swipe("down",True)
+        g[11].swipe("left",True)
         #
-        g[12].swipe("up")
-        g[12].swipe("left")
-        g[12].swipe("up")
+        g[12].swipe("up",True)
+        g[12].swipe("left",True)
+        g[12].swipe("up",True)
         #
-        g[13].swipe("up")
-        g[13].swipe("left")
-        g[13].swipe("right")
+        g[13].swipe("up",True)
+        g[13].swipe("left",True)
+        g[13].swipe("right",True)
         #
-        g[14].swipe("up")
-        g[14].swipe("left")
-        g[14].swipe("down")
+        g[14].swipe("up",True)
+        g[14].swipe("left",True)
+        g[14].swipe("down",True)
         #
-        g[15].swipe("up")
-        g[15].swipe("left")
-        g[15].swipe("left")
+        g[15].swipe("up",True)
+        g[15].swipe("left",True)
+        g[15].swipe("left",True)
         #
-        g[16].swipe("right")
-        g[16].swipe("up")
-        g[16].swipe("up")
+        g[16].swipe("right",True)
+        g[16].swipe("up",True)
+        g[16].swipe("up",True)
         #
-        g[17].swipe("right")
-        g[17].swipe("up")
-        g[17].swipe("right")
+        g[17].swipe("right",True)
+        g[17].swipe("up",True)
+        g[17].swipe("right",True)
         #
-        g[18].swipe("right")
-        g[18].swipe("up")
-        g[18].swipe("down")
+        g[18].swipe("right",True)
+        g[18].swipe("up",True)
+        g[18].swipe("down",True)
         #
-        g[19].swipe("right")
-        g[19].swipe("up")
-        g[19].swipe("left")
+        g[19].swipe("right",True)
+        g[19].swipe("up",True)
+        g[19].swipe("left",True)
         #
-        g[20].swipe("right")
-        g[20].swipe("right")
-        g[20].swipe("up")
+        g[20].swipe("right",True)
+        g[20].swipe("right",True)
+        g[20].swipe("up",True)
         #
-        g[21].swipe("right")
-        g[21].swipe("right")
-        g[21].swipe("right")
+        g[21].swipe("right",True)
+        g[21].swipe("right",True)
+        g[21].swipe("right",True)
         #
-        g[22].swipe("right")
-        g[22].swipe("right")
-        g[22].swipe("down")
+        g[22].swipe("right",True)
+        g[22].swipe("right",True)
+        g[22].swipe("down",True)
         #
-        g[23].swipe("right")
-        g[23].swipe("right")
-        g[23].swipe("left")
+        g[23].swipe("right",True)
+        g[23].swipe("right",True)
+        g[23].swipe("left",True)
         #
-        g[24].swipe("right")
-        g[24].swipe("down")
-        g[24].swipe("up")
+        g[24].swipe("right",True)
+        g[24].swipe("down",True)
+        g[24].swipe("up",True)
         #
-        g[25].swipe("right")
-        g[25].swipe("down")
-        g[25].swipe("right")
+        g[25].swipe("right",True)
+        g[25].swipe("down",True)
+        g[25].swipe("right",True)
         #
-        g[26].swipe("right")
-        g[26].swipe("down")
-        g[26].swipe("down")
+        g[26].swipe("right",True)
+        g[26].swipe("down",True)
+        g[26].swipe("down",True)
         #
-        g[27].swipe("right")
-        g[27].swipe("down")
-        g[27].swipe("left")
+        g[27].swipe("right",True)
+        g[27].swipe("down",True)
+        g[27].swipe("left",True)
         #
-        g[28].swipe("right")
-        g[28].swipe("left")
-        g[28].swipe("up")
+        g[28].swipe("right",True)
+        g[28].swipe("left",True)
+        g[28].swipe("up",True)
         #
-        g[29].swipe("right")
-        g[29].swipe("left")
-        g[29].swipe("right")
+        g[29].swipe("right",True)
+        g[29].swipe("left",True)
+        g[29].swipe("right",True)
         #
-        g[30].swipe("right")
-        g[30].swipe("left")
-        g[30].swipe("down")
+        g[30].swipe("right",True)
+        g[30].swipe("left",True)
+        g[30].swipe("down",True)
         #
-        g[31].swipe("right")
-        g[31].swipe("left")
-        g[31].swipe("left")
+        g[31].swipe("right",True)
+        g[31].swipe("left",True)
+        g[31].swipe("left",True)
         #
-        g[32].swipe("down")
-        g[32].swipe("up")
-        g[32].swipe("up")
+        g[32].swipe("down",True)
+        g[32].swipe("up",True)
+        g[32].swipe("up",True)
         #
-        g[33].swipe("down")
-        g[33].swipe("up")
-        g[33].swipe("right")
+        g[33].swipe("down",True)
+        g[33].swipe("up",True)
+        g[33].swipe("right",True)
         #
-        g[34].swipe("down")
-        g[34].swipe("up")
-        g[34].swipe("down")
+        g[34].swipe("down",True)
+        g[34].swipe("up",True)
+        g[34].swipe("down",True)
         #
-        g[35].swipe("down")
-        g[35].swipe("up")
-        g[35].swipe("left")
+        g[35].swipe("down",True)
+        g[35].swipe("up",True)
+        g[35].swipe("left",True)
         #
-        g[36].swipe("down")
-        g[36].swipe("right")
-        g[36].swipe("up")
+        g[36].swipe("down",True)
+        g[36].swipe("right",True)
+        g[36].swipe("up",True)
         #
-        g[37].swipe("down")
-        g[37].swipe("right")
-        g[37].swipe("right")
+        g[37].swipe("down",True)
+        g[37].swipe("right",True)
+        g[37].swipe("right",True)
         #
-        g[38].swipe("down")
-        g[38].swipe("right")
-        g[38].swipe("down")
+        g[38].swipe("down",True)
+        g[38].swipe("right",True)
+        g[38].swipe("down",True)
         #
-        g[39].swipe("down")
-        g[39].swipe("right")
-        g[39].swipe("left")
+        g[39].swipe("down",True)
+        g[39].swipe("right",True)
+        g[39].swipe("left",True)
         #
-        g[40].swipe("down")
-        g[40].swipe("down")
-        g[40].swipe("up")
+        g[40].swipe("down",True)
+        g[40].swipe("down",True)
+        g[40].swipe("up",True)
         #
-        g[41].swipe("down")
-        g[41].swipe("down")
-        g[41].swipe("right")
+        g[41].swipe("down",True)
+        g[41].swipe("down",True)
+        g[41].swipe("right",True)
         #
-        g[42].swipe("down")
-        g[42].swipe("down")
-        g[42].swipe("down")
+        g[42].swipe("down",True)
+        g[42].swipe("down",True)
+        g[42].swipe("down",True)
         #
-        g[43].swipe("down")
-        g[43].swipe("down")
-        g[43].swipe("left")
+        g[43].swipe("down",True)
+        g[43].swipe("down",True)
+        g[43].swipe("left",True)
         #
-        g[44].swipe("down")
-        g[44].swipe("left")
-        g[44].swipe("up")
+        g[44].swipe("down",True)
+        g[44].swipe("left",True)
+        g[44].swipe("up",True)
         #
-        g[45].swipe("down")
-        g[45].swipe("left")
-        g[45].swipe("right")
+        g[45].swipe("down",True)
+        g[45].swipe("left",True)
+        g[45].swipe("right",True)
         #
-        g[46].swipe("down")
-        g[46].swipe("left")
-        g[46].swipe("down")
+        g[46].swipe("down",True)
+        g[46].swipe("left",True)
+        g[46].swipe("down",True)
         #
-        g[47].swipe("down")
-        g[47].swipe("left")
-        g[47].swipe("left")
+        g[47].swipe("down",True)
+        g[47].swipe("left",True)
+        g[47].swipe("left",True)
         #
-        g[48].swipe("left")
-        g[48].swipe("up")
-        g[48].swipe("up")
+        g[48].swipe("left",True)
+        g[48].swipe("up",True)
+        g[48].swipe("up",True)
         #
-        g[49].swipe("left")
-        g[49].swipe("up")
-        g[49].swipe("right")
+        g[49].swipe("left",True)
+        g[49].swipe("up",True)
+        g[49].swipe("right",True)
         #
-        g[50].swipe("left")
-        g[50].swipe("up")
-        g[50].swipe("down")
+        g[50].swipe("left",True)
+        g[50].swipe("up",True)
+        g[50].swipe("down",True)
         #
-        g[51].swipe("left")
-        g[51].swipe("up")
-        g[51].swipe("left")
+        g[51].swipe("left",True)
+        g[51].swipe("up",True)
+        g[51].swipe("left",True)
         #
-        g[52].swipe("left")
-        g[52].swipe("right")
-        g[52].swipe("up")
+        g[52].swipe("left",True)
+        g[52].swipe("right",True)
+        g[52].swipe("up",True)
         #
-        g[53].swipe("left")
-        g[53].swipe("right")
-        g[53].swipe("right")
+        g[53].swipe("left",True)
+        g[53].swipe("right",True)
+        g[53].swipe("right",True)
         #
-        g[54].swipe("left")
-        g[54].swipe("right")
-        g[54].swipe("down")
+        g[54].swipe("left",True)
+        g[54].swipe("right",True)
+        g[54].swipe("down",True)
         #
-        g[55].swipe("left")
-        g[55].swipe("right")
-        g[55].swipe("left")
+        g[55].swipe("left",True)
+        g[55].swipe("right",True)
+        g[55].swipe("left",True)
         #
-        g[56].swipe("left")
-        g[56].swipe("down")
-        g[56].swipe("up")
+        g[56].swipe("left",True)
+        g[56].swipe("down",True)
+        g[56].swipe("up",True)
         #
-        g[57].swipe("left")
-        g[57].swipe("down")
-        g[57].swipe("right")
+        g[57].swipe("left",True)
+        g[57].swipe("down",True)
+        g[57].swipe("right",True)
         #
-        g[58].swipe("left")
-        g[58].swipe("down")
-        g[58].swipe("down")
+        g[58].swipe("left",True)
+        g[58].swipe("down",True)
+        g[58].swipe("down",True)
         #
-        g[59].swipe("left")
-        g[59].swipe("down")
-        g[59].swipe("left")
+        g[59].swipe("left",True)
+        g[59].swipe("down",True)
+        g[59].swipe("left",True)
         #
-        g[60].swipe("left")
-        g[60].swipe("left")
-        g[60].swipe("up")
+        g[60].swipe("left",True)
+        g[60].swipe("left",True)
+        g[60].swipe("up",True)
         #
-        g[61].swipe("left")
-        g[61].swipe("left")
-        g[61].swipe("right")
+        g[61].swipe("left",True)
+        g[61].swipe("left",True)
+        g[61].swipe("right",True)
         #
-        g[62].swipe("left")
-        g[62].swipe("left")
-        g[62].swipe("down")
+        g[62].swipe("left",True)
+        g[62].swipe("left",True)
+        g[62].swipe("down",True)
         #
-        g[63].swipe("left")
-        g[63].swipe("left")
-        g[63].swipe("left")
+        g[63].swipe("left",True)
+        g[63].swipe("left",True)
+        g[63].swipe("left",True)
         
     def think(self,prompt=[]):
         if len(prompt)==3:
@@ -879,7 +891,7 @@ class Agent(object):
         aMean=[]
         sMean=[]
         dMean=[]
-        for width in range(1):
+        for width in range(16):
             depth=3
             leaves=64
             w,a,s,d=[],[],[],[]
