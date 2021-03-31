@@ -665,6 +665,9 @@ class main(object):
                     if event.key == ord(' '):
                         g.restart()
                 if event.type == pygame.QUIT:
+                    #EMPTY THE CURRENT GAME
+                    with open('currentBoard', 'w') as f:
+                        f.write("")
                     pygame.quit() 
                     exit(0)
                 #update
